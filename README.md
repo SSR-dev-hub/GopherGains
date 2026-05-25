@@ -18,6 +18,10 @@ Pre-built installers for macOS and Windows are available on the [Releases page](
 > ```
 > On Windows, SmartScreen may warn on first launch — click **More info → Run anyway**.
 
+If GopherGains is useful to you, please consider starring the repo.
+
+If it genuinely made a difference to your trading, [a small donation via Venmo](https://venmo.com/u/ssr-7) is always appreciated.
+
 ---
 
 ## Features
