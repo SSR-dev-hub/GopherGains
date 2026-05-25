@@ -19,6 +19,7 @@ Pre-built installers for macOS and Windows are available on the [Releases page](
 > On Windows, SmartScreen may warn on first launch — click **More info → Run anyway**.
 
 If GopherGains is useful to you, please consider starring the repo.
+
 If it genuinely made a difference to your trading, [a small donation via Venmo](https://venmo.com/u/ssr-7) is always appreciated.
 
 ---
@@ -36,6 +37,7 @@ If it genuinely made a difference to your trading, [a small donation via Venmo](
 - **Dark / Light theme** — persisted across restarts
 - **CSV import** — import Tradier gain/loss CSV exports and merge with existing data
 - **Win streak** — current and all-time best
+- **Encrypted local storage** — credentials and trade data encrypted via OS keychain, never readable on another machine
 
 ---
 
@@ -87,9 +89,10 @@ In GopherGains, open **Settings**, enter your Account ID and token, and hit **Sa
 
 ## Data & privacy
 
-- Credentials stored locally at `~/.gophergains/config.json` — never leaves your machine
-- Trade history cached at `~/.gophergains/trades.json` — plain JSON, you own it
+- Credentials and trade history are stored locally at `~/.gophergains/` — never leaves your machine
+- Both files are **encrypted at rest** using your OS credential store (macOS Keychain / Windows DPAPI) — unreadable on any other machine even if the files are copied
 - All API calls go directly to `api.tradier.com` — no third parties, no telemetry
+- API sync is optional — you can import a CSV exported from Tradier instead
 
 ---
 
