@@ -2,6 +2,18 @@
 
 > A native desktop trading journal for Tradier spreads(can also work for other trades) traders. Pulls your full gain/loss history directly from the Tradier API — no manual entry, no spreadsheets, no browser tab.
 
+## Download
+
+Pre-built installers for macOS and Windows are available on the [Releases page](../../releases/latest).
+
+| Platform | File |
+|---|---|
+| macOS (Apple Silicon) | `GopherGains-x.x.x-arm64.dmg` |
+| macOS (Intel) | `GopherGains-x.x.x.dmg` |
+| Windows | `GopherGains Setup x.x.x.exe` |
+
+---
+
 ## Features
 
 - **Native Electron app** — double-click to launch, lives in your Dock like any macOS app
@@ -109,14 +121,6 @@ zeroday/
 ---
 
 ## Releases
-
-Pre-built installers for macOS and Windows are available on the [Releases page](../../releases/latest).
-
-| Platform | File |
-|---|---|
-| macOS (Apple Silicon) | `GopherGains-x.x.x-arm64.dmg` |
-| macOS (Intel) | `GopherGains-x.x.x.dmg` |
-| Windows | `GopherGains Setup x.x.x.exe` |
 
 ### Publishing a new release (maintainers)
 
