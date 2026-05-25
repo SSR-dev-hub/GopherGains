@@ -12,6 +12,15 @@ Pre-built installers for macOS and Windows are available on the [Releases page](
 | macOS (Intel) | `GopherGains-x.x.x.dmg` |
 | Windows | `GopherGains Setup x.x.x.exe` |
 
+> **macOS note:** Because the app is not yet notarized, Gatekeeper may show _"damaged and can't be opened."_ Run this once in Terminal after installing:
+> ```bash
+> sudo xattr -r -d com.apple.quarantine /Applications/GopherGains.app
+> ```
+> On Windows, SmartScreen may warn on first launch — click **More info → Run anyway**.
+
+If GopherGains is useful to you, please consider starring the repo.
+If it genuinely made a difference to your trading, [a small donation via Venmo](https://venmo.com/u/ssr-7) is always appreciated.
+
 ---
 
 ## Features
