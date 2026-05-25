@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GopherGains</title>
+<link rel="icon" type="image/png" href="../../build/icons/icon.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-spacer"></div>
+    <div class="logo-row">
+      <img class="logo-icon" src="../../build/icons/icon.png" alt="">
+      <div class="logo"><span>Gopher</span>Gains</div>
+    </div>
+    <nav>
+      <a class="active" onclick="showPage('dashboard',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a onclick="showPage('calendar',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Calendar
+      </a>
+      <a onclick="showPage('log',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Trade Log
+      </a>
+      <a onclick="showPage('settings',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-data-range" id="sidebar-data-range"></div>
+      <button class="refresh-btn-big" id="refresh-btn" onclick="triggerSync()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Sync Trades
+      </button>
+      <button id="theme-toggle" onclick="toggleTheme()" style="margin-top:8px;width:100%;padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted2);font-family:var(--font-mono);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted2)'">
+        <span id="theme-icon">☀️</span>
+        <span id="theme-label">Light Mode</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-wrap">
+    <div class="main-header">
+      <span id="main-page-title">Dashboard</span><span class="page-sub" id="main-page-sub">/ overview</span>
+    </div>
+    <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div id="setup-banner" class="setup-banner" style="display:none;">
+        <div class="setup-banner-body">
+          <div class="setup-banner-icon">⚡</div>
+          <div>
+            <div class="setup-banner-title">Connect your Tradier account to get started</div>
+            <div class="setup-banner-desc">
+              <span class="setup-banner-step">1</span> Go to <strong style="color:var(--text);">Settings</strong> and enter your Account ID &amp; API token.<br>
+              <span class="setup-banner-step">2</span> Hit <strong style="color:var(--text);">Sync Trades</strong> at the bottom of the sidebar to pull your full trade history.
+            </div>
+          </div>
+        </div>
+        <button class="setup-banner-btn" onclick="showPage('settings',[...document.querySelectorAll('nav a')].find(a=>a.textContent.trim()==='Settings'))">Open Settings →</button>
+      </div>
+      <div class="stats-row" id="stat-cards"></div>
+      <div class="grid3">
+        <div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Equity Curve</span>
+              <span class="panel-sub" id="equity-range"></span>
+            </div>
+            <canvas id="equityChart"></canvas>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Drawdown</span>
+              <span class="panel-sub" id="max-dd-label"></span>
+            </div>
+            <canvas id="drawdownChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Win / Loss Split</span></div>
+            <canvas id="winLossChart" style="max-height:160px;"></canvas>
+          </div>
+          <div class="panel" style="margin-top:0">
+            <div class="panel-header"><span class="panel-title">Recent Days</span></div>
+            <div id="recent-days"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="panel-header">
+          <span class="panel-title">Monthly P&amp;L</span>
+          <span class="panel-sub" id="monthly-best-label"></span>
+        </div>
+        <canvas id="monthlyChart" style="max-height:200px;"></canvas>
+      </div>
+      <div class="grid2" style="margin-top:16px;">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">P&amp;L by Underlying</span></div>
+          <div id="underlying-bars"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Trade Count</span></div>
+          <canvas id="underlyingCountChart" style="max-height:220px;"></canvas>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="panel-header"><span class="panel-title">Equity by Underlying</span></div>
+        <canvas id="underlyingLineChart" style="max-height:220px;"></canvas>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="page-calendar" class="page">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+            <span class="cal-month-label" id="cal-month-label"></span>
+            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+          </div>
+          <div class="cal-stats" id="cal-month-stats"></div>
+        </div>
+        <div class="cal-grid-wrap">
+          <div class="cal-grid-inner">
+            <div class="cal-grid" id="cal-headers"></div>
+            <div class="cal-grid" id="cal-body" style="margin-top:4px;"></div>
+          </div>
+          <div class="cal-week-col">
+            <div class="cal-week-header">WEEKLY</div>
+            <div id="cal-weeks"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRADE LOG -->
+    <div id="page-log" class="page">
+      <div class="panel">
+        <div class="filter-row" style="justify-content:space-between;align-items:center;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input class="filter-input" id="log-search" placeholder="Search symbol…" oninput="renderLog()">
+            <select class="filter-input" id="log-underlying" onchange="renderLog()">
+              <option value="">All underlyings</option>
+            </select>
+            <select class="filter-input" id="log-result" onchange="renderLog()">
+              <option value="">Win / Loss</option>
+              <option value="win">Win</option>
+              <option value="loss">Loss</option>
+            </select>
+            <span style="font-size:10px;color:var(--muted);flex-shrink:0;">From</span>
+            <input type="date" class="filter-input" id="log-date-from" onchange="renderLog()" style="width:130px;color-scheme:dark;">
+            <span style="font-size:10px;color:var(--muted);flex-shrink:0;">To</span>
+            <input type="date" class="filter-input" id="log-date-to" onchange="renderLog()" style="width:130px;color-scheme:dark;">
+            <button class="btn-ghost btn-sm" onclick="clearLogDates()" style="font-size:10px;padding:3px 8px;">Clear</button>
+          </div>
+          <div class="log-view-toggle">
+            <button class="toggle-btn active" id="toggle-trades" onclick="setLogView('trades')">Trades</button>
+            <button class="toggle-btn" id="toggle-legs" onclick="setLogView('legs')">Legs</button>
+          </div>
+        </div>
+        <div id="log-trades-view"></div>
+        <div id="log-legs-view" style="display:none;overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th><th>Symbol</th><th>Qty</th><th>Cost</th><th>Proceeds</th><th>P&amp;L</th>
+              </tr>
+            </thead>
+            <tbody id="log-body"></tbody>
+          </table>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:12px;" id="log-count"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page" style="padding-bottom:80px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;align-items:start;">
+
+        <!-- Tradier API Connection -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Tradier API Connection</span></div>
+          <div style="font-size:11px;color:var(--muted2);margin-bottom:18px;line-height:1.7;">
+            Connects directly to Tradier and fetches your full gain/loss history.<br>
+            Hit <strong style="color:var(--accent);">Sync Trades</strong> in the sidebar anytime to pull the latest.
+          </div>
+          <div class="form-group">
+            <label class="form-label">Account ID</label>
+            <div style="position:relative;">
+              <input class="form-input" id="s-account-id" type="password" placeholder="e.g. VA000001" autocomplete="off" style="padding-right:40px;">
+              <button onclick="toggleFieldVisibility('s-account-id','eye-account')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;" id="eye-account">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Token</label>
+            <div style="position:relative;">
+              <input class="form-input" id="s-token" type="password" placeholder="Your Tradier access token" autocomplete="off" style="padding-right:40px;">
+              <button onclick="toggleFieldVisibility('s-token','eye-token')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;" id="eye-token">👁</button>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:20px;">
+            Stored locally only — never transmitted except directly to api.tradier.com.<br>
+            <span style="color:var(--muted2);">Find your token: Tradier → Preferences → API Access → Production API Access (not Sandbox)</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn-primary" onclick="saveTradierCreds()" style="flex:1;min-width:160px;">Save &amp; Sync Now</button>
+            <button class="btn-ghost btn-sm btn-danger" onclick="clearTradeLogs()" title="Keeps credentials, wipes trade data so next sync re-pulls everything" style="white-space:nowrap;">Clear Trade Logs</button>
+            <button class="btn-ghost btn-sm btn-danger" onclick="clearAllData()" title="Wipes credentials and all trade data" style="white-space:nowrap;">Clear All Data</button>
+          </div>
+          <div id="sync-status" style="margin-top:16px;font-size:11px;min-height:16px;line-height:1.6;"></div>
+          <div id="sync-info" style="margin-top:8px;font-size:10px;color:var(--muted);"></div>
+        </div>
+
+        <!-- Import from CSV -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Import from CSV</span></div>
+          <div style="font-size:11px;color:var(--muted2);margin-bottom:14px;line-height:1.7;">
+            Export a CSV from Tradier and import it here — it merges with existing data and deduplicates automatically.
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:20px;line-height:1.7;">
+            <strong style="color:var(--muted2);">How to export:</strong> Tradier → Account → Export → Gain/Loss (filter by dates) → Export CSV
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="file" id="csv-file-input" accept=".csv" style="display:none;" onchange="handleCSVImport(this)">
+            <button class="btn-ghost btn-sm" onclick="document.getElementById('csv-file-input').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:5px;vertical-align:-1px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Choose CSV File
+            </button>
+            <span id="csv-file-name" style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">No file selected</span>
+          </div>
+          <div id="csv-status" style="margin-top:12px;font-size:11px;min-height:16px;line-height:1.6;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    </div><!-- /main -->
+  </div><!-- /main-wrap -->
+</div><!-- /shell -->
+
+<!-- SETTINGS TIP — fixed to bottom of viewport, shown only on Settings page -->
+<div id="settings-tip" style="display:none;position:fixed;bottom:0;left:200px;right:0;z-index:40;padding:10px 24px;background:rgba(10,12,15,0.92);backdrop-filter:blur(8px);">
+  <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted2);line-height:1.7;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0;margin-top:2px;color:var(--yellow);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <span>If data looks wrong or incomplete — clear trade logs and <strong>re-sync trades</strong> to re-pull everything.</span>
+      <span>If the app is unresponsive, close and relaunch GopherGains.</span>
+    </div>
+  </div>
+</div>
+
+<!-- DAY MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-date-title"></div>
+      <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">×</button>
+    </div>
+    <div class="day-total" id="modal-day-total"></div>
+    <div id="modal-trades"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
