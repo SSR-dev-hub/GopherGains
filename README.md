@@ -108,6 +108,31 @@ zeroday/
 
 ---
 
+## Releases
+
+Pre-built installers for macOS and Windows are available on the [Releases page](../../releases/latest).
+
+| Platform | File |
+|---|---|
+| macOS (Apple Silicon) | `GopherGains-x.x.x-arm64.dmg` |
+| macOS (Intel) | `GopherGains-x.x.x.dmg` |
+| Windows | `GopherGains Setup x.x.x.exe` |
+
+### Publishing a new release (maintainers)
+
+Bump the version in `package.json`, then tag and push:
+
+```bash
+git add package.json
+git commit -m "chore: bump version to 1.x.x"
+git tag v1.x.x
+git push && git push origin v1.x.x
+```
+
+GitHub Actions builds both platforms automatically and publishes the installers to the Releases page. No manual build steps needed.
+
+---
+
 ## Tech stack
 
 | Layer | Tech |
