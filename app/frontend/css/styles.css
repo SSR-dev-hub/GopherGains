@@ -13,7 +13,7 @@
   --red-dim: rgba(248,113,113,0.12);
   --blue: #60a5fa;
   --yellow: #fbbf24;
-  --font-display: 'Syne', sans-serif;
+  --font-display: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
 }
 [data-theme="light"] {
@@ -95,9 +95,12 @@ canvas{max-height:240px;}
 .cal-nav-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.15s;}
 .cal-nav-btn:hover{border-color:var(--accent);color:var(--accent);}
 .cal-month-label{font-family:var(--font-display);font-weight:700;font-size:15px;min-width:120px;text-align:center;}
-.cal-stats{display:flex;gap:16px;font-size:11px;}
+.cal-stats{display:flex;gap:16px;font-size:11px;align-items:center;}
+.cal-month-total{font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1;}
+.cal-share-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted2);font-family:var(--font-display);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px;}
+.cal-share-btn:hover{border-color:var(--accent);color:var(--accent);}
 .cal-grid-wrap{display:grid;grid-template-columns:1fr auto;gap:0;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-grid{display:grid;grid-template-columns:0.6fr 1fr 1fr 1fr 1fr 1fr 0.6fr;gap:2px;}
 .cal-grid-inner{flex:1;}
 .cal-day-header{text-align:center;font-size:10px;color:var(--muted);padding:6px 0;letter-spacing:.5px;}
 .cal-day{min-height:108px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 8px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;display:flex;flex-direction:column;}
@@ -108,9 +111,8 @@ canvas{max-height:240px;}
 .cal-day.has-trades.neg{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.25);}
 .cal-day.has-trades.pos:hover{background:rgba(74,222,128,0.13);border-color:var(--accent);}
 .cal-day.has-trades.neg:hover{background:rgba(248,113,113,0.13);border-color:var(--red);}
-.cal-day-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
-.cal-day-num{font-size:10px;color:var(--muted);}
-.cal-day-pnl{font-family:var(--font-display);font-size:14px;font-weight:800;line-height:1;}
+.cal-day-num{font-size:10px;color:var(--muted);align-self:flex-start;}
+.cal-day-pnl{font-family:var(--font-display);font-size:17px;font-weight:800;line-height:1;text-align:center;width:100%;margin:3px 0 6px;}
 .cal-day-pnl.pos{color:var(--accent);}
 .cal-day-pnl.neg{color:var(--red);}
 .cal-trades{display:flex;flex-direction:column;gap:2px;flex:1;overflow:hidden;}
@@ -150,11 +152,11 @@ canvas{max-height:240px;}
 .modal-wing-sep{color:var(--muted);font-size:12px;}
 
 .cal-more{font-size:8px;color:var(--muted2);background:var(--surface);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;}
-.cal-week-col{display:flex;flex-direction:column;gap:2px;padding-left:8px;width:90px;}
+.cal-week-col{display:flex;flex-direction:column;gap:2px;padding-left:8px;width:120px;}
 .cal-week-header{font-size:10px;color:var(--muted);letter-spacing:.5px;padding:6px 0;text-align:right;}
-.cal-week-cell{min-height:108px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
-.cal-week-label{font-size:9px;color:var(--muted);margin-bottom:2px;}
-.cal-week-val{font-family:var(--font-display);font-size:12px;font-weight:700;}
+.cal-week-cell{min-height:108px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.cal-week-label{font-size:9px;color:var(--muted);margin-bottom:4px;}
+.cal-week-val{font-family:var(--font-display);font-size:18px;font-weight:800;}
 .cal-week-val.pos{color:var(--accent);}
 .cal-week-val.neg{color:var(--red);}
 

@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GopherGains</title>
 <link rel="icon" type="image/png" href="../../build/icons/icon.png">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -79,6 +80,9 @@
             <div class="panel-header">
               <span class="panel-title">Equity Curve</span>
               <span class="panel-sub" id="equity-range"></span>
+              <button class="cal-share-btn" onclick="copyChartPanel('equityChart')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </button>
             </div>
             <canvas id="equityChart"></canvas>
           </div>
@@ -105,6 +109,9 @@
         <div class="panel-header">
           <span class="panel-title">Monthly P&amp;L</span>
           <span class="panel-sub" id="monthly-best-label"></span>
+          <button class="cal-share-btn" onclick="copyChartPanel('monthlyChart')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+          </button>
         </div>
         <canvas id="monthlyChart" style="max-height:200px;"></canvas>
       </div>
@@ -128,10 +135,16 @@
     <div id="page-calendar" class="page">
       <div class="panel">
         <div class="panel-header">
-          <div class="cal-nav">
-            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-            <span class="cal-month-label" id="cal-month-label"></span>
-            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+              <span class="cal-month-label" id="cal-month-label"></span>
+              <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+            </div>
+            <button class="cal-share-btn" id="cal-share-btn" onclick="shareCalendar()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              Copy Image
+            </button>
           </div>
           <div class="cal-stats" id="cal-month-stats"></div>
         </div>

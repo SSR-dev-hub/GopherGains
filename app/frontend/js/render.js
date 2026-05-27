@@ -112,7 +112,7 @@ export function renderCalendar() {
     monthTotal += byDate[d]; monthDays++; if (byDate[d] > 0) monthWin++
   })
   document.getElementById('cal-month-stats').innerHTML = `
-    <span class="${monthTotal >= 0 ? 'pos' : 'neg'}" style="font-family:var(--font-display);font-weight:700;">${fmt(monthTotal)}</span>
+    <span class="cal-month-total ${monthTotal >= 0 ? 'pos' : 'neg'}">${fmt(monthTotal)}</span>
     <span style="color:var(--muted);">${monthDays} days</span>
     <span style="color:var(--muted);">${monthDays ? Math.round(monthWin / monthDays * 100) : 0}% WR</span>`
 
@@ -137,10 +137,10 @@ export function renderCalendar() {
     if (pnl !== undefined) cls += pnl >= 0 ? ' has-trades pos' : ' has-trades neg'
     if (dateStr === today) cls += ' today'
 
-    let innerHtml = `<div class="cal-day-top">
-      <span class="cal-day-num">${d}</span>
-      ${pnl !== undefined ? `<span class="cal-day-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${fmt(pnl, 0)}</span>` : ''}
-    </div>`
+    let innerHtml = `<span class="cal-day-num">${d}</span>`
+    if (pnl !== undefined) {
+      innerHtml += `<span class="cal-day-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${fmt(pnl, 0)}</span>`
+    }
 
     if (dayRows.length > 0) {
       const spreads = groupIntoSpreads(dayRows)
