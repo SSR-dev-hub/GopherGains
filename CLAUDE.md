@@ -335,6 +335,16 @@ node -e "require('./src/lib/dedup').mergeDedup([{symbol:'X',closeDate:'2026-01-0
 
 ---
 
+## README maintenance
+
+After completing any significant feature, **always consult the user before touching README.md**. Do not update it silently.
+
+When a big feature lands, propose README changes by listing what could be added — new feature bullets, updated quickstart steps, data & privacy notes, etc. — and let the user decide what to include. Only edit the file after explicit approval.
+
+What counts as a significant feature: new UI page or major UI overhaul, new data source or sync behaviour, new settings/config options, security-relevant changes (encryption, credential handling), new build or release steps.
+
+---
+
 ## What's NOT implemented yet
 
 - [ ] Notes/journal per trade day
