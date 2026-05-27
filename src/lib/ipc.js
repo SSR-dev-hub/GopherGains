@@ -64,6 +64,16 @@ function registerIpcHandlers() {
     }
   })
 
+  ipcMain.handle('trades:today', async (_event, { account_id, token }) => {
+    try {
+      const result = await broker.fetchTodayOrders(account_id, token)
+      return result ?? null
+    } catch (e) {
+      console.error('[Today]', e.message)
+      return null
+    }
+  })
+
   ipcMain.handle('trades:clearLogs', () => {
     store.clearTrades()
     return { ok: true }

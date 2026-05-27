@@ -9,7 +9,7 @@ import {
 import {
   loadCredentials, saveCredentials, loadTradesFromDisk, loadTradesMeta,
   syncWithBroker, importTradesAPI, clearTradeLogsAPI, clearAllAPI,
-  parseTradierCSV,
+  parseTradierCSV, loadTodayTentative,
 } from './api.js'
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -148,6 +148,13 @@ async function triggerSync() {
   }
   document.getElementById('refresh-btn').classList.add('spinning')
   await syncFromTradier(account_id, token, true)
+
+  const tentative = await loadTodayTentative(account_id, token)
+  if (tentative && (!isUSMarketOpen() || isWithin30MinsOfClose() || tentative.allClosed)) {
+    state.todayTentative = tentative
+    renderCalendar()
+  }
+
   document.getElementById('refresh-btn').classList.remove('spinning')
 }
 
@@ -222,6 +229,29 @@ function toggleTheme() {
   applyTheme(next)
   const activePage = document.querySelector('.page.active')?.id?.replace('page-', '')
   if (activePage === 'dashboard') renderDashboard()
+}
+
+// ── US market hours check (ET, handles DST automatically) ────────────────────
+function getETMinutes() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(new Date())
+  const day = parts.find((p) => p.type === 'weekday').value
+  if (day === 'Sat' || day === 'Sun') return -1
+  const h = parseInt(parts.find((p) => p.type === 'hour').value)
+  const m = parseInt(parts.find((p) => p.type === 'minute').value)
+  return h * 60 + m
+}
+
+function isUSMarketOpen() {
+  const mins = getETMinutes()
+  return mins >= 570 && mins < 960 // 9:30 AM–4:00 PM ET
+}
+
+function isWithin30MinsOfClose() {
+  const mins = getETMinutes()
+  return mins >= 930 && mins < 960 // 3:30–4:00 PM ET
 }
 
 // ── Startup ───────────────────────────────────────────────────────────────────

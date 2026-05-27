@@ -121,7 +121,8 @@ export function renderCalendar() {
 
   const firstDay    = new Date(state.calYear, state.calMonth, 1).getDay()
   const daysInMonth = new Date(state.calYear, state.calMonth + 1, 0).getDate()
-  const today       = new Date().toISOString().slice(0, 10)
+  const _t          = new Date()
+  const today       = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`
 
   const cells = []
   for (let i = 0; i < firstDay; i++) cells.push(`<div class="cal-day empty"></div>`)
@@ -133,13 +134,21 @@ export function renderCalendar() {
     const dateStr = `${state.calYear}-${String(state.calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const pnl     = byDate[dateStr]
     const dayRows = tradesByDate[dateStr] || []
+    const isTodayCell = dateStr === today
+    const tentative   = isTodayCell && state.todayTentative?.date === today ? state.todayTentative : null
+
     let cls = 'cal-day'
     if (pnl !== undefined) cls += pnl >= 0 ? ' has-trades pos' : ' has-trades neg'
-    if (dateStr === today) cls += ' today'
+    if (isTodayCell) cls += ' today'
+    if (tentative && pnl === undefined) cls += ' tentative'
 
     let innerHtml = `<span class="cal-day-num">${d}</span>`
+
     if (pnl !== undefined) {
       innerHtml += `<span class="cal-day-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${fmt(pnl, 0)}</span>`
+    } else if (tentative) {
+      const sign = tentative.totalPnl >= 0 ? 'pos' : 'neg'
+      innerHtml += `<span class="cal-day-pnl tentative ${sign}">~${fmt(tentative.totalPnl, 0)}</span>`
     }
 
     if (dayRows.length > 0) {
@@ -150,28 +159,39 @@ export function renderCalendar() {
         ${shown.map((s) => calChip(s)).join('')}
         ${extra > 0 ? `<div class="cal-more">+${extra}</div>` : ''}
       </div>`
+    } else if (tentative) {
+      innerHtml += `<div class="cal-trades">
+        ${tentative.spreads.map((s) => `
+          <div class="cal-trade-chip">
+            <span class="cal-chip-ticker tentative-chip">${s.ticker}</span>
+            <span class="cal-chip-type ${s.type === 'IC' ? 'IC' : s.type === 'CS' ? 'C' : 'P'}">${s.type}</span>
+            <span class="cal-chip-pnl tentative ${s.pnl >= 0 ? 'pos' : 'neg'}">~${fmt(s.pnl, 0)}</span>
+          </div>`).join('')}
+        <div class="cal-tentative-label">unsettled</div>
+      </div>`
     }
 
     const onclick = pnl !== undefined ? `onclick="openDayModal('${dateStr}')"` : ''
     cells.push(`<div class="${cls}" ${onclick}>${innerHtml}</div>`)
 
     weekDayCount++
-    if (!weekSums[currentWeek]) weekSums[currentWeek] = 0
-    if (pnl !== undefined) weekSums[currentWeek] += pnl
+    if (!weekSums[currentWeek]) weekSums[currentWeek] = { total: 0, hasTentative: false }
+    if (pnl !== undefined) weekSums[currentWeek].total += pnl
+    if (tentative)         { weekSums[currentWeek].total += tentative.totalPnl; weekSums[currentWeek].hasTentative = true }
     if (weekDayCount % 7 === 0) { currentWeek++; weekDayCount = 0 }
   }
 
   const remainder = cells.length % 7
   if (remainder > 0) {
     for (let i = 0; i < 7 - remainder; i++) cells.push(`<div class="cal-day empty"></div>`)
-    if (!weekSums[currentWeek]) weekSums[currentWeek] = 0
+    if (!weekSums[currentWeek]) weekSums[currentWeek] = { total: 0, hasTentative: false }
   }
 
   document.getElementById('cal-body').innerHTML = cells.join('')
   document.getElementById('cal-weeks').innerHTML = weekSums.map((w, i) => `
-    <div class="cal-week-cell">
+    <div class="cal-week-cell${w.hasTentative ? ' tentative' : ''}">
       <div class="cal-week-label">WK ${i + 1}</div>
-      <div class="cal-week-val ${w >= 0 ? 'pos' : 'neg'}">${fmt(w, 0)}</div>
+      <div class="cal-week-val ${w.total >= 0 ? 'pos' : 'neg'}">${w.hasTentative ? '~' : ''}${fmt(w.total, 0)}</div>
     </div>`).join('')
 }
 

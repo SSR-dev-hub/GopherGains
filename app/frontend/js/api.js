@@ -56,6 +56,13 @@ export async function clearTradeLogsAPI() {
   return fetch(`${PROXY}/clear-trades`)
 }
 
+export async function loadTodayTentative(account_id, token) {
+  try {
+    if (IS_APP()) return await window.electronAPI.invoke('trades:today', { account_id, token })
+  } catch { /* no-op */ }
+  return null
+}
+
 export async function clearAllAPI() {
   if (IS_APP()) return window.electronAPI.invoke('trades:clearAll', {})
   return fetch(`${PROXY}/clear`)
