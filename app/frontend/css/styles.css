@@ -53,6 +53,7 @@ nav a:hover{color:var(--text);background:var(--surface2);}
 nav a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim);}
 nav a svg{width:14px;height:14px;opacity:.7;}
 .sidebar-bottom{margin-top:auto;padding:0 12px 16px;}
+.app-version{text-align:center;font-size:10px;color:var(--muted);margin-top:10px;letter-spacing:.3px;}
 .sidebar-data-range{padding:10px 8px 12px;text-align:center;line-height:1.7;}
 .sdr-label{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px;}
 .sdr-val{font-family:var(--font-mono);font-size:10px;color:var(--muted2);}

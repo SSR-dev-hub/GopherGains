@@ -34,6 +34,8 @@ If it genuinely made a difference to your trading, [a small donation via Venmo](
 - **Trade log** — dense, filterable rows grouped by date with date-range and win/loss filters
 - **By Underlying** — P&L breakdown and equity curve across NDX, QQQ, SPX, SPY, and more
 - **Monthly bar chart** — trade count + win rate on hover, best month labelled
+- **Auto-sync on launch** — trades refresh automatically every time you open the app (no manual sync needed)
+- **Tentative today P&L** — shows intraday P&L on the calendar from live orders, marked as unsettled and excluded from all stats
 - **Dark / Light theme** — persisted across restarts
 - **CSV import** — import Tradier gain/loss CSV exports and merge with existing data
 - **Win streak** — current and all-time best

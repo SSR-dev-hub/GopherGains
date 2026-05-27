@@ -271,7 +271,15 @@ async function autoSync() {
   }
 
   renderDashboard()
-  await loadCredentials()
+
+  if (window.electronAPI) {
+    const { version } = await window.electronAPI.invoke('app:version', {})
+    const el = document.getElementById('app-version')
+    if (el) el.textContent = `v${version}`
+  }
+
+  const creds = await loadCredentials()
+  if (creds?.account_id && creds?.token) triggerSync()
 }
 
 // ── Copy chart panel as image ─────────────────────────────────────────────────
