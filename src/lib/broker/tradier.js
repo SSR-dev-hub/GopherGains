@@ -134,7 +134,6 @@ async function fetchTodayOrders(accountId, token) {
     if (!order.leg) continue
 
     const legs = Array.isArray(order.leg) ? order.leg : [order.leg]
-    const isOpening = legs.some((l) => l.side && l.side.includes('_to_open'))
 
     for (const leg of legs) {
       if (!leg.option_symbol || !leg.exec_quantity || !leg.avg_fill_price) continue
@@ -145,16 +144,17 @@ async function fetchTodayOrders(accountId, token) {
 
       const ticker = TICKER_ALIASES[rawTicker] || rawTicker
       const key    = `${ticker}|${expiry}`
+      const isLegOpening = leg.side && leg.side.includes('_to_open')
 
       if (!groups[key]) groups[key] = { ticker, expiry, cashFlow: 0, openQty: 0, closeQty: 0, optTypes: new Set() }
 
       // sell = credit (+), buy = debit (-)
       const sign = leg.side.startsWith('sell') ? 1 : -1
-      groups[key].cashFlow += sign * leg.avg_fill_price * leg.exec_quantity * 100
+      groups[key].cashFlow += sign * parseFloat(leg.avg_fill_price) * parseFloat(leg.exec_quantity) * 100
       groups[key].optTypes.add(optType)
 
-      if (isOpening) groups[key].openQty  += leg.exec_quantity
-      else           groups[key].closeQty += leg.exec_quantity
+      if (isLegOpening) groups[key].openQty  += parseFloat(leg.exec_quantity)
+      else              groups[key].closeQty += parseFloat(leg.exec_quantity)
     }
   }
 
@@ -164,8 +164,8 @@ async function fetchTodayOrders(accountId, token) {
     const include = expiry === todayExp
       // Rule 1 & 2: today's expiry — always include (unclosed qty expired worthless = full credit kept)
       ? true
-      // Rule 3: future expiry — only if opened AND fully closed today
-      : openQty > 0 && closeQty >= openQty
+      // Rule 3: future expiry only — opened AND fully closed today (past-expiry positions already settled)
+      : expiry > todayExp && openQty > 0 && closeQty >= openQty
 
     if (!include) continue
 
