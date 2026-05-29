@@ -165,6 +165,7 @@ export function renderCalendar() {
           <div class="cal-trade-chip">
             <span class="cal-chip-ticker tentative-chip">${s.ticker}</span>
             <span class="cal-chip-type ${s.type === 'IC' ? 'IC' : s.type === 'CS' ? 'C' : 'P'}">${s.type}</span>
+            ${s.qty ? `<span class="cal-chip-qty">×${s.qty}</span>` : ''}
             <span class="cal-chip-pnl tentative ${s.pnl >= 0 ? 'pos' : 'neg'}">~${fmt(s.pnl, 0)}</span>
           </div>`).join('')}
         <div class="cal-tentative-label">unsettled</div>
