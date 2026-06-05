@@ -305,17 +305,19 @@ async function copyChartPanel(canvasId) {
 // ── Share calendar as image ───────────────────────────────────────────────────
 async function shareCalendar() {
   const btn = document.getElementById('cal-share-btn')
-  btn.textContent = 'Capturing…'
+  btn.style.visibility = 'hidden'
   btn.disabled = true
   try {
     const panel = document.querySelector('#page-calendar .panel')
     const canvas = await html2canvas(panel, { backgroundColor: null, scale: 2, useCORS: true })
     canvas.toBlob(async (blob) => {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      btn.style.visibility = 'visible'
       btn.textContent = 'Copied!'
       setTimeout(() => { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copy Image'; btn.disabled = false }, 2000)
     })
   } catch (e) {
+    btn.style.visibility = 'visible'
     btn.textContent = 'Failed'
     setTimeout(() => { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copy Image'; btn.disabled = false }, 2000)
   }

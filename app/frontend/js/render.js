@@ -111,10 +111,15 @@ export function renderCalendar() {
   Object.keys(byDate).filter((d) => d.startsWith(monthKey)).forEach((d) => {
     monthTotal += byDate[d]; monthDays++; if (byDate[d] > 0) monthWin++
   })
+  const tentativeMonth = state.todayTentative?.date?.startsWith(monthKey) ? state.todayTentative.totalPnl : 0
+  const hasTentative   = tentativeMonth !== 0
+  const displayTotal   = monthTotal + tentativeMonth
+  const totalDays      = monthDays + (hasTentative ? 1 : 0)
+  const totalWin       = monthWin  + (hasTentative && tentativeMonth > 0 ? 1 : 0)
   document.getElementById('cal-month-stats').innerHTML = `
-    <span class="cal-month-total ${monthTotal >= 0 ? 'pos' : 'neg'}">${fmt(monthTotal)}</span>
-    <span style="color:var(--muted);">${monthDays} days</span>
-    <span style="color:var(--muted);">${monthDays ? Math.round(monthWin / monthDays * 100) : 0}% WR</span>`
+    <span class="cal-month-total ${displayTotal >= 0 ? 'pos' : 'neg'}">${hasTentative ? '~' : ''}${fmt(displayTotal, 0)}</span>
+    <span style="color:var(--muted);">${totalDays} days</span>
+    <span style="color:var(--muted);">${totalDays ? Math.round(totalWin / totalDays * 100) : 0}% WR</span>`
 
   const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
   document.getElementById('cal-headers').innerHTML = days.map((d) => `<div class="cal-day-header">${d}</div>`).join('')
