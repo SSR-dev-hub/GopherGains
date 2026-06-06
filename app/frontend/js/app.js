@@ -150,8 +150,17 @@ async function triggerSync() {
   await syncFromTradier(account_id, token, true)
 
   const tentative = await loadTodayTentative(account_id, token)
-  if (tentative && (!isUSMarketOpen() || isWithin30MinsOfClose() || tentative.allClosed)) {
-    state.todayTentative = tentative
+  if (tentative && tentative.length > 0) {
+    // Past-date entries always shown; today's entry respects market hours
+    const _td      = new Date()
+    const todayStr = `${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`
+    const todayEntry = tentative.find((e) => e.date === todayStr)
+    const showToday  = !todayEntry || !isUSMarketOpen() || isWithin30MinsOfClose() || todayEntry.allClosed
+    const filtered   = showToday ? tentative : tentative.filter((e) => e.date !== todayStr)
+    state.todayTentative = filtered.length > 0 ? filtered : null
+    renderCalendar()
+  } else if (!tentative?.length && state.todayTentative) {
+    state.todayTentative = null
     renderCalendar()
   }
 

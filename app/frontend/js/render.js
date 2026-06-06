@@ -111,11 +111,15 @@ export function renderCalendar() {
   Object.keys(byDate).filter((d) => d.startsWith(monthKey)).forEach((d) => {
     monthTotal += byDate[d]; monthDays++; if (byDate[d] > 0) monthWin++
   })
-  const tentativeMonth = state.todayTentative?.date?.startsWith(monthKey) ? state.todayTentative.totalPnl : 0
-  const hasTentative   = tentativeMonth !== 0
+  // Only count tentative entries for dates with no settled data (avoid double-count)
+  const tentativeEntries = state.todayTentative
+    ? state.todayTentative.filter((e) => e.date.startsWith(monthKey) && byDate[e.date] === undefined)
+    : []
+  const tentativeMonth = tentativeEntries.reduce((s, e) => s + e.totalPnl, 0)
+  const hasTentative   = tentativeEntries.length > 0
   const displayTotal   = monthTotal + tentativeMonth
-  const totalDays      = monthDays + (hasTentative ? 1 : 0)
-  const totalWin       = monthWin  + (hasTentative && tentativeMonth > 0 ? 1 : 0)
+  const totalDays      = monthDays + tentativeEntries.length
+  const totalWin       = monthWin  + tentativeEntries.filter((e) => e.totalPnl > 0).length
   document.getElementById('cal-month-stats').innerHTML = `
     <span class="cal-month-total ${displayTotal >= 0 ? 'pos' : 'neg'}">${hasTentative ? '~' : ''}${fmt(displayTotal, 0)}</span>
     <span style="color:var(--muted);">${totalDays} days</span>
@@ -140,12 +144,15 @@ export function renderCalendar() {
     const pnl     = byDate[dateStr]
     const dayRows = tradesByDate[dateStr] || []
     const isTodayCell = dateStr === today
-    const tentative   = isTodayCell && state.todayTentative?.date === today ? state.todayTentative : null
+    // Show tentative only on dates that have no settled gainloss data yet
+    const tentative   = pnl === undefined
+      ? (state.todayTentative?.find((e) => e.date === dateStr) ?? null)
+      : null
 
     let cls = 'cal-day'
     if (pnl !== undefined) cls += pnl >= 0 ? ' has-trades pos' : ' has-trades neg'
     if (isTodayCell) cls += ' today'
-    if (tentative && pnl === undefined) cls += ' tentative'
+    if (tentative) cls += ' tentative'
 
     let innerHtml = `<span class="cal-day-num">${d}</span>`
 
@@ -177,13 +184,14 @@ export function renderCalendar() {
       </div>`
     }
 
-    const onclick = pnl !== undefined ? `onclick="openDayModal('${dateStr}')"` : ''
+    const onclick = (pnl !== undefined || tentative) ? `onclick="openDayModal('${dateStr}')"` : ''
     cells.push(`<div class="${cls}" ${onclick}>${innerHtml}</div>`)
 
     weekDayCount++
     if (!weekSums[currentWeek]) weekSums[currentWeek] = { total: 0, hasTentative: false }
     if (pnl !== undefined) weekSums[currentWeek].total += pnl
     if (tentative)         { weekSums[currentWeek].total += tentative.totalPnl; weekSums[currentWeek].hasTentative = true }
+
     if (weekDayCount % 7 === 0) { currentWeek++; weekDayCount = 0 }
   }
 
@@ -209,9 +217,45 @@ export function calNav(dir) {
 }
 
 export function openDayModal(dateStr) {
-  const rows  = allRows().filter((r) => r.closeDate === dateStr)
-  const total = rows.reduce((a, b) => a + (parseFloat(b.gainLoss) || 0), 0)
+  const rows           = allRows().filter((r) => r.closeDate === dateStr)
+  const tentativeEntry = state.todayTentative?.find((e) => e.date === dateStr) ?? null
+
   document.getElementById('modal-date-title').textContent = dateStr
+
+  if (rows.length === 0 && tentativeEntry) {
+    const total = tentativeEntry.totalPnl
+    document.getElementById('modal-day-total').innerHTML =
+      `<span class="${total >= 0 ? 'pos' : 'neg'}">~${fmt(total)}</span> <span style="font-size:11px;color:var(--muted2);margin-left:4px;">unsettled</span>`
+
+    document.getElementById('modal-trades').innerHTML = tentativeEntry.spreads.map((s) => {
+      const tickerCls = TICKER_CLS_MAP[s.ticker] || 'other'
+      const label     = TYPE_FULL_LABEL[s.type] || s.type
+      const cls       = TYPE_BADGE_CLS[s.type]  || ''
+      const expStr    = s.expiry ? prettyExpiry(s.expiry) : ''
+      const meta      = [s.qty ? `×${s.qty}` : '', expStr].filter(Boolean).join(' · ')
+      const openTag   = !s.fullyClosed ? `<span style="font-size:10px;color:var(--muted2);">open</span>` : ''
+
+      return `<div class="modal-spread-card">
+        <div class="modal-spread-header">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="cal-chip-ticker ${tickerCls}" style="font-family:var(--font-display);font-weight:800;font-size:15px;">${s.ticker}</span>
+            ${cls ? `<span class="badge ${cls}">${label}</span>` : ''}
+            <span style="font-size:10px;color:var(--muted);">${meta}</span>
+            ${openTag}
+          </div>
+          <span class="${s.pnl >= 0 ? 'pos' : 'neg'}" style="font-family:var(--font-display);font-size:20px;font-weight:800;">~${s.pnl >= 0 ? '+' : ''}${fmt(s.pnl, 0)}</span>
+        </div>
+        <div class="modal-batches">
+          <div class="modal-batch-row" style="color:var(--muted2);font-size:11px;">P&amp;L not yet settled — figures are estimates</div>
+        </div>
+      </div>`
+    }).join('')
+
+    document.getElementById('modal-overlay').classList.add('open')
+    return
+  }
+
+  const total = rows.reduce((a, b) => a + (parseFloat(b.gainLoss) || 0), 0)
   document.getElementById('modal-day-total').innerHTML =
     `<span class="${total >= 0 ? 'pos' : 'neg'}">${fmt(total)}</span>`
 

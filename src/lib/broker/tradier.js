@@ -107,17 +107,44 @@ const TICKER_ALIASES = { SPXW: 'SPX', NDXP: 'NDX', DJXW: 'DJX', RUTW: 'RUT', NQX
 async function fetchTodayOrders(accountId, token) {
   const _t       = new Date()
   const today    = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`
-  const todayExp = today.slice(2).replace(/-/g, '') // "2026-05-28" → "260528"
+  const todayExp = today.slice(2).replace(/-/g, '') // "2026-06-05" → "260605"
 
-  // Group legs by underlying+expiry, accumulate cash flow + open/close qty
   const groups = {}
 
-  // ── Source A: orders API (multileg format, may lag by hours for new order types) ──
-  const lookback = new Date(_t); lookback.setDate(lookback.getDate() - 5)
-  const start    = `${lookback.getFullYear()}-${String(lookback.getMonth()+1).padStart(2,'0')}-${String(lookback.getDate()).padStart(2,'0')}`
+  // ── Source A: account history (past sessions — updates once session closes) ──
+  // Gives real-time access to yesterday+ trades before gainloss API settles (T+1)
   try {
-    const data  = await get(`/v1/accounts/${accountId}/orders?includeTags=true&limit=10000&filter=all&start=${start}`, token)
-    const raw   = data?.orders?.order
+    const data   = await get(`/v1/accounts/${accountId}/history?limit=500&type=trade`, token)
+    const evRaw  = data?.history?.event
+    const events = !evRaw || evRaw === 'null' ? [] : Array.isArray(evRaw) ? evRaw : [evRaw]
+
+    for (const e of events) {
+      const trade = e?.trade
+      if (!trade || trade.trade_type !== 'option') continue
+      const sym = trade.symbol ?? ''
+      const m = sym.match(/^([A-Z]+)(\d{6})([CP])/)
+      if (!m) continue
+      const [, rawTicker, expiry, optType] = m
+      if (expiry === todayExp) continue  // today's session handled by orders API below
+
+      const ticker = TICKER_ALIASES[rawTicker] || rawTicker
+      const key    = `${ticker}|${expiry}`
+      const qty    = parseFloat(trade.quantity ?? 0)
+      const price  = parseFloat(trade.price   ?? 0)
+
+      if (!groups[key]) groups[key] = { ticker, expiry, cashFlow: 0, optTypes: new Set(), fromHistory: true, netQtyBySymbol: {} }
+      // cashFlow: short(qty<0)=credit(+), long(qty>0)=debit(-)
+      groups[key].cashFlow += -qty * price * 100
+      groups[key].optTypes.add(optType)
+      // Net signed qty per symbol: opens accumulate, closes cancel out → remaining = open interest
+      groups[key].netQtyBySymbol[sym] = (groups[key].netQtyBySymbol[sym] ?? 0) + qty
+    }
+  } catch {}
+
+  // ── Source B: orders API (current session — today's filled multileg orders) ──
+  try {
+    const data   = await get(`/v1/accounts/${accountId}/orders?includeTags=true&limit=10000`, token)
+    const raw    = data?.orders?.order
     const orders = !raw || raw === 'null' ? [] : Array.isArray(raw) ? raw : [raw]
 
     for (const order of orders) {
@@ -144,8 +171,10 @@ async function fetchTodayOrders(accountId, token) {
         const [, rawTicker, expiry, optType] = m
         const ticker = TICKER_ALIASES[rawTicker] || rawTicker
         const key    = `${ticker}|${expiry}`
+        // Orders data takes priority — clear any history-based entry for this expiry
+        if (groups[key]?.fromHistory) delete groups[key]
         const isLegOpening = leg.side && leg.side.includes('_to_open')
-        if (!groups[key]) groups[key] = { ticker, expiry, cashFlow: 0, openQty: 0, closeQty: 0, optTypes: new Set(), fromPositions: false }
+        if (!groups[key]) groups[key] = { ticker, expiry, cashFlow: 0, openQty: 0, closeQty: 0, optTypes: new Set(), fromHistory: false }
         const sign = leg.side.startsWith('sell') ? 1 : -1
         groups[key].cashFlow += sign * parseFloat(leg.avg_fill_price) * parseFloat(leg.exec_quantity) * 100
         groups[key].optTypes.add(optType)
@@ -155,64 +184,77 @@ async function fetchTodayOrders(accountId, token) {
     }
   } catch {}
 
-  // ── Source B: positions API (real-time, catches orders that lag in orders API) ──
+  // ── Source C: positions API (fallback for today's open positions not yet in orders) ──
   try {
-    const posData  = await get(`/v1/accounts/${accountId}/positions`, token)
-    const rawPos   = posData?.positions?.position
+    const posData   = await get(`/v1/accounts/${accountId}/positions`, token)
+    const rawPos    = posData?.positions?.position
     const positions = !rawPos || rawPos === 'null' ? [] : Array.isArray(rawPos) ? rawPos : [rawPos]
 
     for (const pos of positions) {
       const m = pos.symbol?.match(/^([A-Z]+)(\d{6})([CP])/)
       if (!m) continue
       const [, rawTicker, expiry, optType] = m
-      if (expiry < todayExp) continue  // skip already-settled past positions
-
-      const ticker = TICKER_ALIASES[rawTicker] || rawTicker
-      const key    = `${ticker}|${expiry}`
-
-      // cost_basis on short options: negative = credit received, positive = debit paid
-      // Net contribution: -quantity × cost_basis × 100
-      //   short (qty<0): -(-5) × (-3.01) × 100 = -$1505 if cost_basis<0  ← log to verify
-      //   long  (qty>0): -(5) × (2.62) × 100  = -$1310
+      if (expiry < todayExp) continue
+      const ticker    = TICKER_ALIASES[rawTicker] || rawTicker
+      const key       = `${ticker}|${expiry}`
+      if (groups[key] && !groups[key].fromHistory) continue  // orders data takes priority
       const qty       = parseFloat(pos.quantity)
       const costBasis = parseFloat(pos.cost_basis)
-      // Skip if this group came from the orders API — orders data is more accurate
-      if (groups[key] && !groups[key].fromPositions) continue
-
-      if (!groups[key]) groups[key] = { ticker, expiry, cashFlow: 0, openQty: 0, closeQty: 0, optTypes: new Set(), fromPositions: true, spreadQty: 0 }
-
-      // cost_basis is already the total dollar amount for all contracts in this leg
-      // Short (qty<0): cost_basis<0 (credit received) → -cost_basis = positive P&L contribution
-      // Long  (qty>0): cost_basis>0 (debit paid)      → -cost_basis = negative P&L contribution
+      if (!groups[key]) groups[key] = { ticker, expiry, cashFlow: 0, openQty: 0, closeQty: 0, optTypes: new Set(), fromHistory: false, spreadQty: 0 }
       groups[key].cashFlow  += -costBasis
       groups[key].optTypes.add(optType)
       groups[key].openQty   += Math.abs(qty)
-      // all legs of a spread have the same |qty|, so max gives the spread contract count
-      groups[key].spreadQty  = Math.max(groups[key].spreadQty, Math.abs(qty))
+      groups[key].spreadQty  = Math.max(groups[key].spreadQty ?? 0, Math.abs(qty))
     }
   } catch {}
 
-  const spreads = []
+  // Build one result entry per expiry date
+  const byDate = {}
 
-  for (const { ticker, expiry, cashFlow, openQty, closeQty, optTypes, fromPositions, spreadQty } of Object.values(groups)) {
-    const include = expiry === todayExp
-      ? true
-      : expiry > todayExp && openQty > 0 && closeQty >= openQty
+  for (const group of Object.values(groups)) {
+    const { ticker, expiry, cashFlow, optTypes, fromHistory, openQty, closeQty, spreadQty } = group
 
+    let include
+    if (fromHistory) {
+      include = true  // history is authoritative for past sessions; render.js filters settled dates
+    } else {
+      include = expiry <= todayExp ? openQty > 0 : openQty > 0 && closeQty >= openQty
+    }
     if (!include) continue
 
-    const type     = optTypes.has('C') && optTypes.has('P') ? 'IC' : optTypes.has('C') ? 'CS' : 'PS'
-    const numLegs  = type === 'IC' ? 4 : 2
-    const qty      = fromPositions ? spreadQty : Math.round(openQty / numLegs)
-    const fullyClosed = closeQty >= openQty
-    spreads.push({ ticker, expiry, type, qty, pnl: Math.round(cashFlow * 100) / 100, fullyClosed })
+    const type    = optTypes.has('C') && optTypes.has('P') ? 'IC' : optTypes.has('C') ? 'CS' : 'PS'
+    const numLegs = type === 'IC' ? 4 : 2
+
+    let qty
+    if (fromHistory) {
+      // Max abs net qty across symbols: opens accumulate, closes cancel → remaining = contract count
+      // e.g. IC expired: net ±5 per leg → qty=5. IC closed: net 0 → use max anyway for display
+      const vals = Object.values(group.netQtyBySymbol ?? {}).map(Math.abs)
+      qty = vals.length ? Math.max(...vals) : 0
+    } else if (spreadQty) {
+      qty = spreadQty
+    } else {
+      qty = Math.round(openQty / numLegs)
+    }
+
+    const fullyClosed = fromHistory ? true : closeQty >= openQty
+    const pnl         = Math.round(cashFlow * 100) / 100
+    const date        = `20${expiry.slice(0, 2)}-${expiry.slice(2, 4)}-${expiry.slice(4, 6)}`
+
+    if (!byDate[date]) byDate[date] = { date, spreads: [], allClosed: true }
+    byDate[date].spreads.push({ ticker, expiry, type, qty, pnl, fullyClosed })
+    if (!fullyClosed) byDate[date].allClosed = false
   }
 
-  if (!spreads.length) return null
+  const result = Object.values(byDate).map(({ date, spreads, allClosed }) => ({
+    date,
+    totalPnl: Math.round(spreads.reduce((s, r) => s + r.pnl, 0) * 100) / 100,
+    spreads,
+    allClosed,
+  }))
 
-  const totalPnl  = Math.round(spreads.reduce((s, r) => s + r.pnl, 0) * 100) / 100
-  const allClosed = spreads.every((s) => s.fullyClosed)
-  return { date: today, totalPnl, spreads, allClosed }
+  console.log(`  [Tradier] fetchTodayOrders: ${result.length} unsettled dates — ${result.map((r) => r.date).join(', ')}`)
+  return result.length ? result : null
 }
 
 module.exports = { syncTrades, fetchTodayOrders }
